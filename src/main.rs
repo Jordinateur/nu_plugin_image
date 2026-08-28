@@ -91,7 +91,7 @@ impl PluginCommand for ImageResize {
         let maintain_aspect = call.has_flag("maintain-aspect")?;
 
         if width.is_none() && height.is_none() {
-            return Err(ShellError::MissingParameter { param_name: "--width or --height".into(), span });
+            return Err(ShellError::MissingParameter { param_name: "--width or --height".into(), span }.into());
         }
 
         // 1. Grab image from pipeline
@@ -109,7 +109,7 @@ impl PluginCommand for ImageResize {
         };
 
         // 3. Return binary downstream
-        encode_pipeline(resized_img, format, span)
+        Ok(encode_pipeline(resized_img, format, span)?)
     }
 }
 
@@ -155,7 +155,7 @@ impl PluginCommand for ImageConvert {
 
         // Extract original data, transcode parameters inside memory block, send downstream
         let (img, _) = decode_pipeline(input, span)?;
-        encode_pipeline(img, target_format, span)
+        Ok(encode_pipeline(img, target_format, span)?)
     }
 }
 
