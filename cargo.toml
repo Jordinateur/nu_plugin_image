@@ -1,0 +1,21 @@
+[package]
+name = "nu_plugin_image"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# The primary library used to interface with Nushell
+nu-plugin = "0.115.0"
+nu-protocol = "0.115.0"
+
+# Excellent crate for jpg/png manipulation (pure Rust)
+image = "0.25"
+
+[lib]
+name = "nu_plugin_image"
+bench = false
+
+[[bin]]
+name = "nu_plugin_image"
+path = "src/main.rs"
+bench = false
