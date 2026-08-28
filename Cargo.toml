@@ -11,10 +11,6 @@ nu-protocol = "0.115.0"
 # Excellent crate for jpg/png manipulation (pure Rust)
 image = "0.25"
 
-[lib]
-name = "nu_plugin_image"
-bench = false
-
 [[bin]]
 name = "nu_plugin_image"
 path = "src/main.rs"
