@@ -2,12 +2,16 @@ use image::{DynamicImage, ImageFormat};
 use nu_plugin::{
     serve_plugin, EngineInterface, EvaluatedCall, MsgPackSerializer, Plugin, PluginCommand,
 };
-use nu_protocol::{Category, Example, PipelineData, ShellError, Signature, SyntaxShape, Value};
+use nu_protocol::{Category, LabeledError, PipelineData, ShellError, Signature, SyntaxShape, Value};
 use std::io::Cursor;
 
 pub struct ImagePlugin;
 
 impl Plugin for ImagePlugin {
+    fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").into()
+    }
+
     fn commands(&self) -> Vec<Box<dyn PluginCommand<Plugin = Self>>> {
         vec![
             Box::new(ImageResize),
@@ -63,8 +67,7 @@ impl PluginCommand for ImageResize {
     type Plugin = ImagePlugin;
 
     fn name(&self) -> &str { "image resize" }
-    fn usage(&self) -> &str { "Resizes piped image binary data with optional aspect ratio maintenance." }
-    fn category(&self) -> Category { Category::Filters }
+    fn description(&self) -> &str { "Resizes piped image binary data with optional aspect ratio maintenance." }
 
     fn signature(&self) -> Signature {
         Signature::build("image resize")
@@ -72,6 +75,7 @@ impl PluginCommand for ImageResize {
             .named("height", SyntaxShape::Int, "target height pixel dimension", Some('h'))
             .switch("maintain-aspect", "preserves native proportions using targeted dimensions", Some('m'))
             .input_output_type(nu_protocol::Type::Binary, nu_protocol::Type::Binary)
+            .category(Category::Filters)
     }
 
     fn run(
@@ -80,7 +84,7 @@ impl PluginCommand for ImageResize {
         _engine: &EngineInterface,
         call: &EvaluatedCall,
         input: PipelineData,
-    ) -> Result<PipelineData, ShellError> {
+    ) -> Result<PipelineData, LabeledError> {
         let span = call.head;
         let width: Option<u32> = call.get_flag("width")?.map(|i: i64| i as u32);
         let height: Option<u32> = call.get_flag("height")?.map(|i: i64| i as u32);
@@ -116,13 +120,13 @@ impl PluginCommand for ImageConvert {
     type Plugin = ImagePlugin;
 
     fn name(&self) -> &str { "image convert" }
-    fn usage(&self) -> &str { "Converts pipeline image payload format natively inside memory." }
-    fn category(&self) -> Category { Category::Filters }
+    fn description(&self) -> &str { "Converts pipeline image payload format natively inside memory." }
 
     fn signature(&self) -> Signature {
         Signature::build("image convert")
             .required("target_format", SyntaxShape::String, "Format to translate to (jpeg, png, webp, bmp)")
             .input_output_type(nu_protocol::Type::Binary, nu_protocol::Type::Binary)
+            .category(Category::Filters)
     }
 
     fn run(
@@ -131,7 +135,7 @@ impl PluginCommand for ImageConvert {
         _engine: &EngineInterface,
         call: &EvaluatedCall,
         input: PipelineData,
-    ) -> Result<PipelineData, ShellError> {
+    ) -> Result<PipelineData, LabeledError> {
         let span = call.head;
         let target_str: String = call.req(0)?;
 
@@ -146,7 +150,7 @@ impl PluginCommand for ImageConvert {
                 span: Some(span),
                 help: Some("Use: jpeg, png, webp, or bmp".into()),
                 inner: vec![],
-            }),
+            }.into()),
         };
 
         // Extract original data, transcode parameters inside memory block, send downstream
