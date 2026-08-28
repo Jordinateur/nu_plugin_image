@@ -20,6 +20,17 @@ impl Plugin for ImagePlugin {
     }
 }
 
+// Helper: Resolves a user-supplied format string to an ImageFormat
+fn parse_image_format(s: &str) -> Option<ImageFormat> {
+    match s.to_lowercase().as_str() {
+        "jpg" | "jpeg" => Some(ImageFormat::Jpeg),
+        "png" => Some(ImageFormat::Png),
+        "webp" => Some(ImageFormat::WebP),
+        "bmp" => Some(ImageFormat::Bmp),
+        _ => None,
+    }
+}
+
 // Helper: Decodes raw pipe bytes into a manipulative DynamicImage object
 fn decode_pipeline(input: PipelineData, span: nu_protocol::Span) -> Result<(DynamicImage, ImageFormat), ShellError> {
     let bytes = input.into_value(span)?.coerce_into_binary()?;
@@ -139,12 +150,9 @@ impl PluginCommand for ImageConvert {
         let span = call.head;
         let target_str: String = call.req(0)?;
 
-        let target_format = match target_str.to_lowercase().as_str() {
-            "jpg" | "jpeg" => ImageFormat::Jpeg,
-            "png" => ImageFormat::Png,
-            "webp" => ImageFormat::WebP,
-            "bmp" => ImageFormat::Bmp,
-            _ => return Err(ShellError::GenericError {
+        let target_format = match parse_image_format(&target_str) {
+            Some(fmt) => fmt,
+            None => return Err(ShellError::GenericError {
                 error: "Unsupported target format".into(),
                 msg: format!("'{}' is not supported.", target_str),
                 span: Some(span),
@@ -328,29 +336,18 @@ mod tests {
 
     #[test]
     fn test_convert_unsupported_format_error() {
-        // Simulate what ImageConvert::run does for an unknown format string
-        let target_str = "tiff";
-        let result: Result<ImageFormat, ()> = match target_str {
-            "jpg" | "jpeg" => Ok(ImageFormat::Jpeg),
-            "png" => Ok(ImageFormat::Png),
-            "webp" => Ok(ImageFormat::WebP),
-            "bmp" => Ok(ImageFormat::Bmp),
-            _ => Err(()),
-        };
-        assert!(result.is_err(), "unsupported format should return an error");
+        assert!(parse_image_format("tiff").is_none(), "unsupported format should return None");
+        assert!(parse_image_format("svg").is_none());
+        assert!(parse_image_format("").is_none());
     }
 
     #[test]
     fn test_convert_format_aliases() {
-        for alias in &["jpg", "jpeg"] {
-            let fmt: Result<ImageFormat, ()> = match *alias {
-                "jpg" | "jpeg" => Ok(ImageFormat::Jpeg),
-                "png" => Ok(ImageFormat::Png),
-                "webp" => Ok(ImageFormat::WebP),
-                "bmp" => Ok(ImageFormat::Bmp),
-                _ => Err(()),
-            };
-            assert_eq!(fmt.unwrap(), ImageFormat::Jpeg, "{alias} should map to Jpeg");
-        }
+        assert_eq!(parse_image_format("jpg"), Some(ImageFormat::Jpeg));
+        assert_eq!(parse_image_format("jpeg"), Some(ImageFormat::Jpeg));
+        assert_eq!(parse_image_format("JPG"), Some(ImageFormat::Jpeg));
+        assert_eq!(parse_image_format("PNG"), Some(ImageFormat::Png));
+        assert_eq!(parse_image_format("webp"), Some(ImageFormat::WebP));
+        assert_eq!(parse_image_format("bmp"), Some(ImageFormat::Bmp));
     }
 }
