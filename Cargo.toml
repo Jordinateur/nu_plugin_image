@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 # The primary library used to interface with Nushell
-nu-plugin = "0.115.0"
-nu-protocol = "0.115.0"
+nu-plugin = "0.115.1"
+nu-protocol = "0.115.1"
 
 # Excellent crate for jpg/png manipulation (pure Rust)
 image = "0.25"
